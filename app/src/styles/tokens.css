@@ -1,0 +1,84 @@
+/*
+  Sunday Design System — token approximations.
+  The real DS bundle (_ds/sunday-design-system-.../tokens/*.css) is a design-tool-only
+  asset and isn't part of this handoff's shippable files. These values are reconstructed
+  from the literal colors used throughout `Sunday Signal.dc.html` (TYPE_META, ICP_META,
+  ROLE, HG/HA/HR, AV) plus the palette described in the handoff README, so screens match
+  the prototype pixel-for-pixel on color. Swap this file for the real token bundle when
+  it's available.
+*/
+
+:root {
+  color-scheme: light;
+
+  /* ---- Brand ---- */
+  --brand: #FF17E9;
+  --brand-hover: #E100CC;
+
+  /* ---- Pink scale ---- */
+  --pink-50: #FFF0FD;
+  --pink-100: #FFDBFA;
+  --pink-200: #FFB3F4;
+  --pink-400: #FF5FEE;
+  --pink-600: #DB00C4;
+  --pink-700: #A8009A;
+
+  /* ---- Ink neutrals ---- */
+  --ink-50: #F7F7F9;
+  --ink-100: #F0F0F3;
+  --ink-200: #E4E4EA;
+  --ink-300: #C7C7D1;
+  --ink-400: #98979F;
+  --ink-500: #6B6B78;
+  --ink-600: #55555F;
+  --ink-700: #3A3A44;
+  --ink-900: #202027;
+  --ink-950: #14141A;
+
+  --white: #FFFFFF;
+  --surface-sunken: #FAFAFB;
+
+  --text-primary: var(--ink-950);
+  --text-secondary: var(--ink-600);
+  --text-link: var(--brand);
+
+  --border-subtle: #ECECEF;
+  --border-default: var(--ink-200);
+
+  /* ---- Semantic ---- */
+  --success-50: #E7F8F0;
+  --success-500: #12B76A;
+  --success-700: #0E8A50;
+
+  --warning-50: #FEF3E2;
+  --warning-500: #F79009;
+  --warning-700: #B56A00;
+
+  --danger-50: #FEECEB;
+  --danger-300: #FDA29B;
+  --danger-500: #F04438;
+  --danger-700: #B42318;
+
+  --info-50: #E9F3FE;
+  --info-500: #2E90FA;
+  --info-700: #1E6FD0;
+
+  /* ---- Radius ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Shadow ---- */
+  --shadow-sm: 0 1px 2px rgba(20,20,26,.04), 0 1px 3px rgba(20,20,26,.06);
+  --shadow-md: 0 4px 10px rgba(20,20,26,.08);
+  --shadow-lg: 0 12px 32px rgba(20,20,26,.16);
+  --shadow-brand: 0 6px 16px rgba(255,23,233,.35);
+
+  /* ---- Type ---- */
+  --font-display: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --font-body: "Helvetica Neue", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}

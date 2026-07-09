@@ -1,0 +1,40 @@
+@import "./tokens.css";
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--surface-sunken);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root { height: 100vh; }
+
+a { color: var(--text-link); text-decoration: none; }
+a:hover { color: var(--brand-hover); }
+
+button { font: inherit; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: 8px; border: 3px solid var(--surface-sunken); }
+
+@keyframes sig-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes flame { 0%, 100% { transform: scale(1) rotate(-2deg); } 50% { transform: scale(1.12) rotate(3deg); } }
+@keyframes confetti-fall { 0% { transform: translateY(-30px) rotate(0); opacity: 1; } 100% { transform: translateY(105vh) rotate(560deg); opacity: .85; } }
+
+.sig-card { animation: sig-in .34s var(--ease-standard) both; }
+.navbtn:hover { background: var(--ink-50) !important; }
+.row-hover:hover { background: var(--ink-50) !important; }
+.lift { transition: transform .16s var(--ease-standard), box-shadow .16s var(--ease-standard); }
+.lift:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sig-card, .lift, .toast-in { animation: none !important; transition: none !important; }
+}
+
+/* Leaflet container needs an explicit height */
+.leaflet-container { width: 100%; height: 100%; border-radius: var(--radius-lg); font-family: var(--font-body); }
