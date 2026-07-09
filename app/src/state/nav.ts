@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 
-export type View = "home" | "pipeline" | "account" | "market" | "mktdetail";
+export type View = "home" | "pipeline" | "account" | "market" | "mktdetail" | "tasks";
 
 export type NavState = {
   view: View;

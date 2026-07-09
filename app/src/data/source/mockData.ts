@@ -1,7 +1,7 @@
 // Raw fixture data ported 1:1 from the design handoff's `Sunday Signal.dc.html`
 // (ACCOUNTS, MARKET, FEED, HEALTH, QUEST_DEFS). Shaped to types.ts so the mock
 // DataSource and the Supabase DataSource are interchangeable for every component.
-import type { Account, FeedItem, MarketGroup, Quest } from "../../types";
+import type { Account, FeedItem, MarketGroup, Quest, Task } from "../../types";
 
 // city center coordinates, jittered per-id so same-region markers don't stack
 const CITY: Record<string, [number, number]> = {
@@ -260,3 +260,23 @@ export const MOCK_ME = {
   quests: MOCK_QUESTS,
   quota: { current: 420_000, target: 600_000, period: "quarter" as const },
 };
+
+function daysFromNow(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().slice(0, 10);
+}
+
+const today = daysFromNow(0);
+
+export const MOCK_TASKS: Task[] = [
+  { id: "t1", accountId: "cop", accountName: "Copper & Co. Group", type: "ai", subject: "Send the group renewal + 9-site migration case", status: "Open", dueDate: daysFromNow(-3), isOverdue: true, isToday: false },
+  { id: "t2", accountId: "har", accountName: "Harbour Restaurant Group", subject: "Call Sophie Reed re: switch case timeline", type: "competitor", status: "Open", dueDate: daysFromNow(-1), isOverdue: true, isToday: false },
+  { id: "t3", accountId: "non", accountName: "Nonna Holdings", subject: "Submit RFP response with peer-group reference", type: "rfp", status: "Open", dueDate: today, isOverdue: false, isToday: true },
+  { id: "t4", accountId: "cop", accountName: "Copper & Co. Group", subject: "Follow up with David Cole (CFO) — still unengaged", type: "decision", status: "Open", dueDate: today, isOverdue: false, isToday: true },
+  { id: "t5", accountId: "non", accountName: "Nonna Holdings", subject: "Prep reference call with comparable 40+ site group", type: "decision", status: "Planned", dueDate: daysFromNow(2), isOverdue: false, isToday: false },
+  { id: "t6", accountId: "har", accountName: "Harbour Restaurant Group", subject: "Quantify review uplift for the MD business case", type: "reviews", status: "Planned", dueDate: daysFromNow(4), isOverdue: false, isToday: false },
+  { id: "t7", accountId: "cop", accountName: "Copper & Co. Group", subject: "Agent flagged renewal risk — reviewed with Priya", type: "ai", status: "Completed", dueDate: daysFromNow(-1), isOverdue: false, isToday: false },
+  { id: "t8", accountId: "non", accountName: "Nonna Holdings", subject: "Procurement issued a formal RFP for group payments", type: "rfp", status: "Completed", dueDate: daysFromNow(-2), isOverdue: false, isToday: false },
+  { id: "t9", accountId: "har", accountName: "Harbour Restaurant Group", subject: "SumUp (incumbent) contract confirmed ending Q3", type: "competitor", status: "Completed", dueDate: daysFromNow(-5), isOverdue: false, isToday: false },
+];

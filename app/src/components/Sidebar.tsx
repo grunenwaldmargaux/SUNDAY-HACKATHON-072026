@@ -9,13 +9,14 @@ function repInitials(name: string) {
 
 export function Sidebar() {
   const nav = useNav();
-  const { me, accounts, feed, say } = useAppState();
+  const { me, accounts, feed, tasks, isTaskDone } = useAppState();
+  const openTaskCount = tasks.filter((t) => t.status !== "Completed" && !isTaskDone(t.id)).length;
 
   const items = [
     { key: "home" as const, label: "Feed", icon: "zap", count: String(feed.length), active: nav.view === "home", onClick: () => nav.go("home") },
     { key: "pipeline" as const, label: "My accounts", icon: "users", count: String(accounts.length), active: nav.view === "pipeline" || nav.view === "account", onClick: () => nav.go("pipeline") },
     { key: "market" as const, label: "Market · TAM", icon: "map", count: "", active: nav.view === "market" || nav.view === "mktdetail", onClick: () => nav.go("market") },
-    { key: "tasks", label: "Tasks", icon: "check-check", count: "3", active: false, onClick: () => say("Tasks — coming soon", "check-check") },
+    { key: "tasks" as const, label: "Tasks", icon: "check-check", count: String(openTaskCount), active: nav.view === "tasks", onClick: () => nav.go("tasks") },
   ];
 
   return (

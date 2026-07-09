@@ -6,6 +6,7 @@ import type {
   MarketGroup,
   NextBestAction,
   SignalType,
+  Task,
   TimelineItem,
 } from "../../types";
 import type { DataSource } from "./types";
@@ -63,8 +64,10 @@ type SfTask = {
   id: string;
   who_id: string | null;
   what_id: string | null;
+  owner_email: string | null;
   activity_date: string | null;
   subject: string | null;
+  status: string | null;
   task_subtype: string | null;
   type: string | null;
 };
@@ -210,7 +213,7 @@ export class SupabaseDataSource implements DataSource {
     if (whatIds.length === 0) return [];
     const { data, error } = await this.client
       .from("sf_tasks")
-      .select("id, who_id, what_id, activity_date, subject, task_subtype, type")
+      .select("id, who_id, what_id, owner_email, activity_date, subject, status, task_subtype, type")
       .in("what_id", whatIds)
       .order("activity_date", { ascending: false });
     if (error) throw error;
@@ -328,6 +331,84 @@ export class SupabaseDataSource implements DataSource {
       this.fetchOpportunityEmnr(opps.map((o) => o.id)),
     ]);
     return this.buildAccount(acc, opps, tasks, emnrByOpp, new Date());
+  }
+
+  // Task.WhatId is polymorphic — usually an Account, sometimes an Opportunity.
+  // Resolve both so every task can still deep-link to the account it's about.
+  private async resolveAccountsForTasks(
+    whatIds: string[],
+  ): Promise<Map<string, { accountId: string; accountName: string }>> {
+    const result = new Map<string, { accountId: string; accountName: string }>();
+    if (whatIds.length === 0) return result;
+
+    const { data: accts, error: acctErr } = await this.client
+      .from("sf_accounts")
+      .select("id, name")
+      .in("id", whatIds);
+    if (acctErr) throw acctErr;
+    const acctNameById = new Map((accts ?? []).map((a) => [a.id as string, a.name as string | null]));
+    for (const id of whatIds) {
+      if (acctNameById.has(id)) result.set(id, { accountId: id, accountName: acctNameById.get(id) ?? "Unnamed account" });
+    }
+
+    const remaining = whatIds.filter((id) => !result.has(id));
+    if (remaining.length > 0) {
+      const { data: opps, error: oppErr } = await this.client
+        .from("sf_opportunities")
+        .select("id, account_id")
+        .in("id", remaining);
+      if (oppErr) throw oppErr;
+      const oppAccountIds = [...new Set((opps ?? []).map((o) => o.account_id).filter((x): x is string => Boolean(x)))];
+      if (oppAccountIds.length > 0) {
+        const { data: oppAccts, error: oppAcctErr } = await this.client
+          .from("sf_accounts")
+          .select("id, name")
+          .in("id", oppAccountIds);
+        if (oppAcctErr) throw oppAcctErr;
+        const oppAcctNameById = new Map((oppAccts ?? []).map((a) => [a.id as string, a.name as string | null]));
+        for (const o of opps ?? []) {
+          if (o.account_id && oppAcctNameById.has(o.account_id)) {
+            result.set(o.id, { accountId: o.account_id, accountName: oppAcctNameById.get(o.account_id) ?? "Unnamed account" });
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  // "Tasks" is the rep's own action list — every task they own, across every
+  // account (not just the top_account set getAccounts() returns), split by the
+  // page into an overdue/today/upcoming to-do list plus a completed-activity log.
+  async getTasks(): Promise<Task[]> {
+    const { data, error } = await this.client
+      .from("sf_tasks")
+      .select("id, who_id, what_id, owner_email, activity_date, subject, status, task_subtype, type")
+      .eq("owner_email", this.repEmail)
+      .order("activity_date", { ascending: true });
+    if (error) throw error;
+    const tasks = (data ?? []) as SfTask[];
+
+    const whatIds = [...new Set(tasks.map((t) => t.what_id).filter((x): x is string => Boolean(x)))];
+    const resolved = await this.resolveAccountsForTasks(whatIds);
+
+    const today = new Date().toISOString().slice(0, 10);
+
+    return tasks.map((t) => {
+      const link = t.what_id ? resolved.get(t.what_id) : undefined;
+      const due = t.activity_date;
+      const status = t.status ?? "Open";
+      return {
+        id: t.id,
+        accountId: link?.accountId ?? null,
+        accountName: link?.accountName ?? "No linked account",
+        type: timelineTypeFor(t),
+        subject: t.subject || t.task_subtype || t.type || "Activity",
+        status,
+        dueDate: due,
+        isOverdue: Boolean(due && due < today && status !== "Completed"),
+        isToday: due === today,
+      };
+    });
   }
 
   // Feed has no dedicated signals table — synthesized from the sparse AI fields

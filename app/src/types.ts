@@ -69,6 +69,18 @@ export type Account = {
   daysSinceLastActivity: number;
 };
 
+export type Task = {
+  id: string;
+  accountId: string | null;
+  accountName: string;
+  type: SignalType;
+  subject: string;
+  status: string;
+  dueDate: string | null;
+  isOverdue: boolean;
+  isToday: boolean;
+};
+
 export type FeedItem = {
   id: string;
   type: SignalType;

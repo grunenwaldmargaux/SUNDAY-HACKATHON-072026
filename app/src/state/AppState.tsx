@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { dataSource } from "../data/source";
-import type { Account, FeedItem, Me, MarketGroup } from "../types";
+import type { Account, FeedItem, Me, MarketGroup, Task } from "../types";
 import { levelFor, nextLevel, QUEST_DEFS, type QuestKey } from "../lib/gamification";
 
 type QuestProgress = Record<string, number>;
@@ -13,6 +13,7 @@ type PersistedState = {
   quests: QuestProgress;
   following: Record<string, boolean>;
   dismissed: Record<string, boolean>;
+  taskDone: Record<string, boolean>;
 };
 
 function loadPersisted(): PersistedState {
@@ -22,7 +23,7 @@ function loadPersisted(): PersistedState {
   } catch {
     // ignore corrupt storage
   }
-  return { xp: 1240, streak: 9, quests: {}, following: {}, dismissed: {} };
+  return { xp: 1240, streak: 9, quests: {}, following: {}, dismissed: {}, taskDone: {} };
 }
 
 type ToastState = { message: string; icon: string } | null;
@@ -33,6 +34,7 @@ type AppStateValue = {
   accounts: Account[];
   feed: FeedItem[];
   market: MarketGroup[];
+  tasks: Task[];
   refreshAccounts: () => Promise<void>;
   refreshMarket: () => Promise<void>;
 
@@ -49,6 +51,8 @@ type AppStateValue = {
   isFollowing: (id: string) => boolean;
   toggleFollow: (id: string, name: string) => void;
   dismissFeedItem: (id: string) => void;
+  isTaskDone: (id: string) => boolean;
+  completeTask: (id: string, subject: string) => void;
   addXp: (amount: number, reason: string, icon?: string) => void;
   progressQuest: (key: QuestKey) => void;
   addToBook: (marketGroupId: string, name: string) => Promise<void>;
@@ -66,6 +70,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [market, setMarket] = useState<MarketGroup[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   const [persisted, setPersisted] = useState<PersistedState>(loadPersisted);
   const [toast, setToast] = useState<ToastState>(null);
@@ -87,17 +92,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const [meData, feedData, accountsData, marketData] = await Promise.all([
+      const [meData, feedData, accountsData, marketData, tasksData] = await Promise.all([
         dataSource.getMe(),
         dataSource.getFeed(),
         dataSource.getAccounts(),
         dataSource.getMarket(),
+        dataSource.getTasks(),
       ]);
       if (cancelled) return;
       setMe(meData);
       setFeed(feedData);
       setAccounts(accountsData);
       setMarket(marketData);
+      setTasks(tasksData);
       setLoading(false);
     })();
     return () => {
@@ -179,6 +186,22 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setPersisted((prev) => ({ ...prev, dismissed: { ...prev.dismissed, [id]: true } }));
   }, []);
 
+  // Tasks are read from Salesforce, not writable back through this app — "done"
+  // is a local overlay, same pattern as following/dismissed.
+  const completeTask = useCallback(
+    (id: string, subject: string) => {
+      setPersisted((prev) => {
+        if (prev.taskDone[id]) return prev;
+        setTimeout(() => {
+          addXp(30, `Task done — ${subject}`, "check-check");
+          progressQuest("q2");
+        }, 0);
+        return { ...prev, taskDone: { ...prev.taskDone, [id]: true } };
+      });
+    },
+    [addXp, progressQuest],
+  );
+
   const addToBook = useCallback(
     async (marketGroupId: string, name: string) => {
       const alreadyBooked = market.find((g) => g.id === marketGroupId)?.book;
@@ -214,6 +237,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       accounts,
       feed,
       market,
+      tasks,
       refreshAccounts,
       refreshMarket,
       xp,
@@ -228,6 +252,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       isFollowing: (id: string) => !!persisted.following[id],
       toggleFollow,
       dismissFeedItem,
+      isTaskDone: (id: string) => !!persisted.taskDone[id],
+      completeTask,
       addXp,
       progressQuest,
       addToBook,
@@ -236,7 +262,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       confetti,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [loading, me, accounts, feed, market, persisted, toast, confetti],
+    [loading, me, accounts, feed, market, tasks, persisted, toast, confetti],
   );
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

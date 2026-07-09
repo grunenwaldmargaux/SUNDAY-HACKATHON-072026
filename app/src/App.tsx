@@ -10,6 +10,7 @@ import { Pipeline } from "./pages/Pipeline";
 import { AccountDetail } from "./pages/AccountDetail";
 import { Market } from "./pages/Market";
 import { MarketDetail } from "./pages/MarketDetail";
+import { Tasks } from "./pages/Tasks";
 
 function Screens() {
   const [view, setView] = useState<View>("home");
@@ -47,6 +48,7 @@ function Screens() {
             {view === "account" && <AccountDetail />}
             {view === "market" && <Market />}
             {view === "mktdetail" && <MarketDetail />}
+            {view === "tasks" && <Tasks />}
           </div>
         </main>
       </div>

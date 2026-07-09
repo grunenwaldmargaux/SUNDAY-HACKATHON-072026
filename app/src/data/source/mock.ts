@@ -1,6 +1,6 @@
-import type { Account, FeedItem, Me, MarketGroup } from "../../types";
+import type { Account, FeedItem, Me, MarketGroup, Task } from "../../types";
 import type { DataSource } from "./types";
-import { MOCK_ACCOUNTS, MOCK_FEED, MOCK_MARKET, MOCK_ME } from "./mockData";
+import { MOCK_ACCOUNTS, MOCK_FEED, MOCK_MARKET, MOCK_ME, MOCK_TASKS } from "./mockData";
 
 function delay<T>(value: T, ms = 120): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(value), ms));
@@ -34,6 +34,10 @@ export class MockDataSource implements DataSource {
   async getMarketGroup(id: string): Promise<MarketGroup | undefined> {
     const found = this.market.find((g) => g.id === id);
     return delay(found ? { ...found } : undefined);
+  }
+
+  async getTasks(): Promise<Task[]> {
+    return delay(MOCK_TASKS.map((t) => ({ ...t })));
   }
 
   async addToBook(marketGroupId: string): Promise<Account> {
