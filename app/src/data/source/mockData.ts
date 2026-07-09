@@ -258,5 +258,5 @@ export const MOCK_ME = {
   xp: 1240,
   streak: 9,
   quests: MOCK_QUESTS,
-  quota: { currentK: 420, targetK: 600, period: "quarter" as const },
+  quota: { current: 420_000, target: 600_000, period: "quarter" as const },
 };

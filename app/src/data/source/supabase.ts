@@ -171,9 +171,9 @@ export class SupabaseDataSource implements DataSource {
       // Only the current month is loaded (qobra_rep_performance has 1 row/rep) —
       // shown as-is rather than fabricating a quarterly rollup.
       quota: {
-        currentK: Math.round(Number(perf?.onboarded_amnr ?? 0)),
-        targetK: Math.round(Number(perf?.monthly_quota ?? 0)),
-        period: "quarter",
+        current: Math.round(Number(perf?.onboarded_amnr ?? 0)),
+        target: Math.round(Number(perf?.monthly_quota ?? 0)),
+        period: "month",
       },
     };
   }

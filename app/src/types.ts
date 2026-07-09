@@ -111,7 +111,9 @@ export type Me = {
   xp: number;
   streak: number;
   quests: Quest[];
-  quota: { currentK: number; targetK: number; period: "quarter" };
+  // Plain £ amounts, not thousands — Qobra's real monthly quota/achieved
+  // figures are already human-scale (e.g. £326 of £5,062), unlike arrK.
+  quota: { current: number; target: number; period: "month" | "quarter" };
 };
 
 export const ICP_SEGMENTS = [

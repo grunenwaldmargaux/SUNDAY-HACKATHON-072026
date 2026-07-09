@@ -4,9 +4,10 @@ import { useAppState } from "../state/AppState";
 export function GamificationStrip() {
   const { xp, level, levelPct, xpNextLabel, streak, quests, questsDone, me } = useAppState();
 
-  const quotaCur = me?.quota.currentK ?? 0;
-  const quotaTgt = me?.quota.targetK ?? 1;
+  const quotaCur = me?.quota.current ?? 0;
+  const quotaTgt = me?.quota.target ?? 1;
   const quotaPct = quotaTgt > 0 ? Math.min(1, quotaCur / quotaTgt) : 0;
+  const quotaLabel = me?.quota.period === "quarter" ? "Quarterly quota" : "Monthly quota";
   const C = 2 * Math.PI * 34;
   const quotaOffset = (C * (1 - quotaPct)).toFixed(1);
 
@@ -77,9 +78,9 @@ export function GamificationStrip() {
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Quarterly quota</div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink-950)", marginTop: 2 }}>£{quotaCur}k</div>
-          <div style={{ fontSize: 12, color: "var(--ink-400)" }}>of £{quotaTgt}k</div>
+          <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{quotaLabel}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink-950)", marginTop: 2 }}>£{quotaCur.toLocaleString()}</div>
+          <div style={{ fontSize: 12, color: "var(--ink-400)" }}>of £{quotaTgt.toLocaleString()}</div>
         </div>
       </div>
     </div>
