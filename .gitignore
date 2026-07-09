@@ -4,3 +4,5 @@
 node_modules/
 .DS_Store
 qobra/
+__pycache__/
+*.pyc
