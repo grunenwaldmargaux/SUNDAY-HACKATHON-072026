@@ -22,7 +22,7 @@ export function Feed() {
 
   const topAccounts = useMemo(() => [...accounts].sort((a, b) => b.score - a.score).slice(0, 5), [accounts]);
 
-  const totalArrM = (accounts.reduce((s, a) => s + a.arrK, 0) / 1000).toFixed(2);
+  const totalArrK = accounts.reduce((s, a) => s + a.arrK, 0);
   const stalledCount = accounts.filter((a) => a.daysSinceLastActivity > 14 || a.daysInStage > 30).length;
 
   const hour = new Date().getHours();
@@ -42,7 +42,7 @@ export function Feed() {
             {greeting}, {me?.repName ?? ""}
           </div>
           <div style={{ fontSize: 14.5, color: "var(--text-secondary)", marginTop: 2 }}>
-            {accounts.length} group accounts in motion · £{totalArrM}M open pipeline · {stalledCount} deal{stalledCount === 1 ? "" : "s"} stalling.
+            {accounts.length} group accounts in motion · {arr(totalArrK)} open pipeline · {stalledCount} deal{stalledCount === 1 ? "" : "s"} stalling.
           </div>
         </div>
       </div>
