@@ -38,6 +38,7 @@ type SfAccount = {
   ai_summary: string | null;
   ai_agent_score: number | null;
   ai_agent_reasoning: string | null;
+  top_account: boolean | null;
 };
 
 type SfOpportunity = {
@@ -252,14 +253,18 @@ export class SupabaseDataSource implements DataSource {
     };
   }
 
+  // "My accounts" shows the strategic top accounts — the same set surfaced in the
+  // Sillage top-account list — driven by the sf_accounts.top_account flag (24 rows
+  // spanning several owners and roles). We intentionally do NOT scope by owner_email
+  // or account_role here: top accounts are a curated cross-rep set, and filtering by
+  // the current rep / prospect-only would drop all but a handful of them.
   async getAccounts(): Promise<Account[]> {
     const { data: accounts, error } = await this.client
       .from("sf_accounts")
       .select(
-        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning",
+        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning, top_account",
       )
-      .eq("owner_email", this.repEmail)
-      .eq("account_role", "prospect");
+      .eq("top_account", true);
     if (error) throw error;
 
     const accountIds = (accounts ?? []).map((a) => a.id);
@@ -276,7 +281,7 @@ export class SupabaseDataSource implements DataSource {
     const { data: acc, error } = await this.client
       .from("sf_accounts")
       .select(
-        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning",
+        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning, top_account",
       )
       .eq("id", id)
       .maybeSingle();
@@ -387,7 +392,7 @@ export class SupabaseDataSource implements DataSource {
     const { data: accounts, error } = await this.client
       .from("sf_accounts")
       .select(
-        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning",
+        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning, top_account",
       )
       .in("account_role", ["prospect", "customer"]);
     if (error) throw error;
@@ -410,7 +415,7 @@ export class SupabaseDataSource implements DataSource {
     const { data: acc, error } = await this.client
       .from("sf_accounts")
       .select(
-        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning",
+        "id, name, owner_email, billing_city, industry, number_of_locations, venue_type, annual_turnover, average_yearly_turnover, stage, account_role, ai_research, ai_sunday_fit, ai_signals, ai_summary, ai_agent_score, ai_agent_reasoning, top_account",
       )
       .eq("id", id)
       .maybeSingle();
