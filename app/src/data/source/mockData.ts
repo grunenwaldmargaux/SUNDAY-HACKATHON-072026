@@ -41,9 +41,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Send the group renewal + 9-site migration business case",
     daysInStage: 12, daysSinceLastActivity: 1,
     committee: [
-      { name: "Priya Menon", role: "Group Ops Director", tag: "Champion", engaged: true },
-      { name: "David Cole", role: "Group CFO", tag: "Economic buyer", engaged: false },
-      { name: "Sarah Blake", role: "Head of IT", tag: "IT & Security", engaged: true },
+      { name: "Priya Menon", role: "Group Ops Director", tag: "Champion", engaged: true, email: null, phone: null, linkedinUrl: null },
+      { name: "David Cole", role: "Group CFO", tag: "Economic buyer", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Sarah Blake", role: "Head of IT", tag: "IT & Security", engaged: true, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Renewal risk", meta: "£310k at risk", title: "Send the group renewal + 9-site migration case", detail: "Master contract ends in 45 days and 9 venues still run a legacy provider. Priya is bought in but David (CFO) hasn't engaged — lead with consolidated reporting and a single settlement.", cta: "Draft business case" },
@@ -64,9 +64,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Submit RFP response + reference a comparable group",
     daysInStage: 6, daysSinceLastActivity: 2,
     committee: [
-      { name: "Marco Ferretti", role: "Group COO", tag: "Champion", engaged: true },
-      { name: "Elena Rossi", role: "Group Finance Director", tag: "Finance", engaged: false },
-      { name: "Tom Reilly", role: "Procurement Lead", tag: "Procurement", engaged: true },
+      { name: "Marco Ferretti", role: "Group COO", tag: "Champion", engaged: true, email: null, phone: null, linkedinUrl: null },
+      { name: "Elena Rossi", role: "Group Finance Director", tag: "Finance", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Tom Reilly", role: "Procurement Lead", tag: "Procurement", engaged: true, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Active RFP", meta: "£420k · deadline 18 Jul", title: "Submit the RFP response with a peer-group reference", detail: "Nonna Holdings issued an RFP across 41 sites. Procurement is running it. Differentiate on reviews uplift and reconciliation — attach a comparable 40+ site reference.", cta: "Build RFP response" },
@@ -85,9 +85,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Build the displacement case vs SumUp for the MD",
     daysInStage: 9, daysSinceLastActivity: 5,
     committee: [
-      { name: "Sophie Reed", role: "Operations Director", tag: "Champion", engaged: true },
-      { name: "James Whitfield", role: "Managing Director", tag: "Economic buyer", engaged: false },
-      { name: "Nadia Osei", role: "Finance Controller", tag: "Finance", engaged: true },
+      { name: "Sophie Reed", role: "Operations Director", tag: "Champion", engaged: true, email: null, phone: null, linkedinUrl: null },
+      { name: "James Whitfield", role: "Managing Director", tag: "Economic buyer", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Nadia Osei", role: "Finance Controller", tag: "Finance", engaged: true, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Displacement", meta: "incumbent exit", title: "Build the switch case vs SumUp before Q3", detail: "The incumbent's group contract ends this quarter. Sophie wants better reputation tooling — quantify the review uplift and the switching cost saved to win the MD.", cta: "Draft switch case" },
@@ -106,9 +106,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Open a discovery with the new CFO on the 60-site rollout",
     daysInStage: 21, daysSinceLastActivity: 18,
     committee: [
-      { name: "Idris Kane", role: "Group COO", tag: "Champion", engaged: true },
-      { name: "Nadia Khan", role: "Group CFO (new)", tag: "Economic buyer", engaged: false },
-      { name: "Ben Ford", role: "Head of Digital", tag: "IT & Security", engaged: false },
+      { name: "Idris Kane", role: "Group COO", tag: "Champion", engaged: true, email: null, phone: null, linkedinUrl: null },
+      { name: "Nadia Khan", role: "Group CFO (new)", tag: "Economic buyer", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Ben Ford", role: "Head of Digital", tag: "IT & Security", engaged: false, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Expansion trigger", meta: "biggest deal · £540k", title: "Open discovery with the new CFO on a 60-site rollout", detail: "Fresh £22M Series B and a brand-new CFO usually means a tooling refresh. Idris is your champion — ask him to sponsor a discovery with Nadia while budgets are being set.", cta: "Draft discovery brief" },
@@ -127,9 +127,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Warm outreach — the new director already knows sunday",
     daysInStage: 3, daysSinceLastActivity: 6,
     committee: [
-      { name: "Leah Roy", role: "Group Ops Director", tag: "Champion", engaged: true },
-      { name: "Owen Pryce", role: "Finance Director", tag: "Finance", engaged: false },
-      { name: "Mia Chen", role: "Head of Estates", tag: "Procurement", engaged: false },
+      { name: "Leah Roy", role: "Group Ops Director", tag: "Champion", engaged: true, email: null, phone: null, linkedinUrl: null },
+      { name: "Owen Pryce", role: "Finance Director", tag: "Finance", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Mia Chen", role: "Head of Estates", tag: "Procurement", engaged: false, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Warm champion", meta: "easy entry", title: "Reach Leah — she rolled out sunday at her last group", detail: "Leah joined from Honest Burgers, a happy sunday client. She's a ready-made internal champion across 30 venues — a short, personal note referencing her experience opens the door fast.", cta: "Draft warm intro" },
@@ -148,9 +148,9 @@ export const MOCK_ACCOUNTS: Account[] = [
     nextAction: "Lead with a group reputation-recovery programme",
     daysInStage: 7, daysSinceLastActivity: 4,
     committee: [
-      { name: "James Holt", role: "Estates & Ops Director", tag: "Champion", engaged: false },
-      { name: "Rachel Dunn", role: "Group Finance Director", tag: "Finance", engaged: false },
-      { name: "Paul Iverson", role: "Chief Executive", tag: "Economic buyer", engaged: false },
+      { name: "James Holt", role: "Estates & Ops Director", tag: "Champion", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Rachel Dunn", role: "Group Finance Director", tag: "Finance", engaged: false, email: null, phone: null, linkedinUrl: null },
+      { name: "Paul Iverson", role: "Chief Executive", tag: "Economic buyer", engaged: false, email: null, phone: null, linkedinUrl: null },
     ],
     nba: [
       { tag: "Board pressure", meta: "exec-level hook", title: "Pitch a group reputation-recovery programme", detail: "Review scores are declining across 85 sites and the board has flagged it. sunday's 1-tap review flow is the exact fix at scale — frame it as an exec-level programme, not a payments swap.", cta: "Draft exec brief" },

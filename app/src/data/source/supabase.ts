@@ -117,6 +117,8 @@ type SfContact = {
   last_name: string | null;
   position: string | null;
   linkedin_url: string | null;
+  email: string | null;
+  phone_number: string | null;
 };
 
 // Sillage contacts have no CRM-style buying-committee tag — best-effort guess
@@ -337,7 +339,7 @@ export class SupabaseDataSource implements DataSource {
 
     const { data: contacts, error: contactErr } = await this.client
       .from("sillage_contacts")
-      .select("mapping_id, first_name, last_name, position, linkedin_url")
+      .select("mapping_id, first_name, last_name, position, linkedin_url, email, phone_number")
       .in("mapping_id", mappingIds);
     if (contactErr) throw contactErr;
     for (const c of (contacts ?? []) as SfContact[]) {
@@ -414,6 +416,9 @@ export class SupabaseDataSource implements DataSource {
       role: c.position ?? "Contact",
       tag: tagForPosition(c.position),
       engaged: false,
+      email: c.email,
+      phone: c.phone_number,
+      linkedinUrl: c.linkedin_url,
     }));
 
     return {

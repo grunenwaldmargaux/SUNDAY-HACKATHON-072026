@@ -36,6 +36,9 @@ export type CommitteeMember = {
   role: string;
   tag: CommitteeTag;
   engaged: boolean;
+  email: string | null;
+  phone: string | null;
+  linkedinUrl: string | null;
 };
 
 export type NextBestAction = {

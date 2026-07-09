@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Icon } from "../lib/icons";
 import { TYPE_META, ROLE_META } from "../lib/signalMeta";
 import { tierFor, initials, avatarColors, arr, firstName } from "../lib/format";
@@ -9,6 +10,7 @@ import { DEAL_STAGES } from "../types";
 export function AccountDetail() {
   const { accounts, isFollowing, toggleFollow, addXp, progressQuest, say } = useAppState();
   const nav = useNav();
+  const [expandedContact, setExpandedContact] = useState<number | null>(null);
 
   const account = accounts.find((a) => a.id === nav.acctId) ?? accounts[0];
   if (!account) {
@@ -234,19 +236,59 @@ export function AccountDetail() {
               <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
                 {account.committee.map((m, i) => {
                   const roleMeta = ROLE_META[m.tag] ?? ROLE_META.Procurement;
+                  const open = expandedContact === i;
+                  const hasDetails = Boolean(m.email || m.phone);
                   return (
-                    <div key={`${m.name}-${i}`} style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                      <span style={{ width: 38, height: 38, flex: "0 0 auto", borderRadius: "50%", background: "var(--ink-100)", color: "var(--ink-700)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 600 }}>
-                        {initials(m.name)}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink-950)" }}>{m.name}</span>
-                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: m.engaged ? "#12B76A" : "#C7C7D1" }} title={m.engaged ? "Engaged" : "Not engaged"} />
+                    <div key={`${m.name}-${i}`}>
+                      <div
+                        onClick={() => setExpandedContact(open ? null : i)}
+                        className="navbtn"
+                        style={{ display: "flex", alignItems: "center", gap: 11, cursor: "pointer", borderRadius: "var(--radius-md)", padding: "2px 4px", margin: "-2px -4px" }}
+                      >
+                        <span style={{ width: 38, height: 38, flex: "0 0 auto", borderRadius: "50%", background: "var(--ink-100)", color: "var(--ink-700)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 600 }}>
+                          {initials(m.name)}
+                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 13.5, fontWeight: 500, color: "var(--ink-950)" }}>{m.name}</span>
+                            <span style={{ width: 7, height: 7, borderRadius: "50%", background: m.engaged ? "#12B76A" : "#C7C7D1" }} title={m.engaged ? "Engaged" : "Not engaged"} />
+                          </div>
+                          <div style={{ fontSize: 12, color: "var(--ink-400)" }}>{m.role}</div>
                         </div>
-                        <div style={{ fontSize: 12, color: "var(--ink-400)" }}>{m.role}</div>
+                        <span style={{ fontSize: 10.5, fontWeight: 600, color: roleMeta.color, background: roleMeta.bg, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>{m.tag}</span>
+                        <Icon name={open ? "arrow-left" : "arrow-right"} size={13} color="var(--ink-300)" />
                       </div>
-                      <span style={{ fontSize: 10.5, fontWeight: 600, color: roleMeta.color, background: roleMeta.bg, borderRadius: 999, padding: "2px 9px", whiteSpace: "nowrap" }}>{m.tag}</span>
+                      {open && (
+                        <div style={{ marginTop: 8, marginLeft: 49, padding: "10px 12px", background: "var(--ink-50)", borderRadius: 10, display: "flex", flexDirection: "column", gap: 7 }}>
+                          {hasDetails ? (
+                            <>
+                              {m.email && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--ink-700)" }}>
+                                  <Icon name="mail" size={14} color="var(--ink-400)" />
+                                  {m.email}
+                                </div>
+                              )}
+                              {m.phone && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "var(--ink-700)" }}>
+                                  <Icon name="send" size={14} color="var(--ink-400)" />
+                                  {m.phone}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <div style={{ fontSize: 12.5, color: "var(--ink-400)" }}>No email or phone on file for this contact.</div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); say(`Enrichment requested — ${m.name}`, "sparkles"); }}
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, alignSelf: "flex-start", border: "none", cursor: "pointer", background: "var(--brand)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 12.5, fontWeight: 600, borderRadius: "var(--radius-pill)", padding: "7px 14px" }}
+                              >
+                                <Icon name="sparkles" size={14} color="#fff" />
+                                Enrich contact
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
