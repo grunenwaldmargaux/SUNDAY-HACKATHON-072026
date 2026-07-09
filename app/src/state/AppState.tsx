@@ -16,14 +16,19 @@ type PersistedState = {
   taskDone: Record<string, boolean>;
 };
 
+const DEFAULT_PERSISTED: PersistedState = { xp: 1240, streak: 9, quests: {}, following: {}, dismissed: {}, taskDone: {} };
+
 function loadPersisted(): PersistedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
+    // Merge over defaults, not replace — a browser with state saved before a
+    // field existed (e.g. taskDone, added after this shipped) must still get
+    // that field, or every reader of persisted.<newField> throws on undefined.
+    if (raw) return { ...DEFAULT_PERSISTED, ...JSON.parse(raw) };
   } catch {
     // ignore corrupt storage
   }
-  return { xp: 1240, streak: 9, quests: {}, following: {}, dismissed: {}, taskDone: {} };
+  return DEFAULT_PERSISTED;
 }
 
 type ToastState = { message: string; icon: string } | null;
