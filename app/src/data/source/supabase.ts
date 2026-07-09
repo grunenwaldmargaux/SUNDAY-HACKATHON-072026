@@ -50,6 +50,15 @@ type SfOpportunity = {
   created_date: string | null;
 };
 
+// Opportunity.Amount is a flat platform/setup fee (near-always £99), not deal
+// size — the real recurring-revenue signal is the sum of Estimated Monthly Net
+// Revenue across the opportunity's line items. We annualize it (×12) the same
+// way asset `price` is annualized elsewhere in this file.
+type SfOpportunityProduct = {
+  opportunity_id: string | null;
+  estimated_monthly_net_revenue: number | null;
+};
+
 type SfTask = {
   id: string;
   who_id: string | null;
@@ -179,6 +188,24 @@ export class SupabaseDataSource implements DataSource {
     return data ?? [];
   }
 
+  private async fetchOpportunityEmnr(opportunityIds: string[]): Promise<Map<string, number>> {
+    const sums = new Map<string, number>();
+    if (opportunityIds.length === 0) return sums;
+    const { data, error } = await this.client
+      .from("sf_opportunity_products")
+      .select("opportunity_id, estimated_monthly_net_revenue")
+      .in("opportunity_id", opportunityIds);
+    if (error) throw error;
+    for (const row of (data ?? []) as SfOpportunityProduct[]) {
+      if (!row.opportunity_id || row.estimated_monthly_net_revenue == null) continue;
+      sums.set(
+        row.opportunity_id,
+        (sums.get(row.opportunity_id) ?? 0) + Number(row.estimated_monthly_net_revenue),
+      );
+    }
+    return sums;
+  }
+
   private async fetchTasksFor(whatIds: string[]): Promise<SfTask[]> {
     if (whatIds.length === 0) return [];
     const { data, error } = await this.client
@@ -194,11 +221,15 @@ export class SupabaseDataSource implements DataSource {
     acc: SfAccount,
     opps: SfOpportunity[],
     tasks: SfTask[],
+    emnrByOpp: Map<string, number>,
     now: Date,
   ): Account {
     const accountOpps = opps.filter((o) => o.account_id === acc.id);
-    const primaryOpp = [...accountOpps].sort((a, b) => (b.amount ?? 0) - (a.amount ?? 0))[0];
-    const arrK = Math.round(accountOpps.reduce((s, o) => s + (o.amount ?? 0), 0) / 1000);
+    const primaryOpp = [...accountOpps].sort(
+      (a, b) => (emnrByOpp.get(b.id) ?? 0) - (emnrByOpp.get(a.id) ?? 0),
+    )[0];
+    const emnrTotal = accountOpps.reduce((s, o) => s + (emnrByOpp.get(o.id) ?? 0), 0);
+    const arrK = Math.round((emnrTotal * 12) / 1000);
     const stageIndex = primaryOpp?.stage_name ? STAGE_NAME_TO_INDEX[primaryOpp.stage_name] ?? 0 : 0;
     const dealAgeMonths = primaryOpp ? monthsBetween(primaryOpp.created_date, now) : 0;
     // No OpportunityHistory table → approximate "days in stage" with deal age.
@@ -269,10 +300,13 @@ export class SupabaseDataSource implements DataSource {
 
     const accountIds = (accounts ?? []).map((a) => a.id);
     const opps = await this.fetchOpenOpportunities(accountIds);
-    const tasks = await this.fetchTasksFor([...accountIds, ...opps.map((o) => o.id)]);
+    const [tasks, emnrByOpp] = await Promise.all([
+      this.fetchTasksFor([...accountIds, ...opps.map((o) => o.id)]),
+      this.fetchOpportunityEmnr(opps.map((o) => o.id)),
+    ]);
     const now = new Date();
 
-    const built = (accounts ?? []).map((a) => this.buildAccount(a, opps, tasks, now));
+    const built = (accounts ?? []).map((a) => this.buildAccount(a, opps, tasks, emnrByOpp, now));
     return [...built, ...this.book.values()];
   }
 
@@ -289,8 +323,11 @@ export class SupabaseDataSource implements DataSource {
     if (!acc) return undefined;
 
     const opps = await this.fetchOpenOpportunities([id]);
-    const tasks = await this.fetchTasksFor([id, ...opps.map((o) => o.id)]);
-    return this.buildAccount(acc, opps, tasks, new Date());
+    const [tasks, emnrByOpp] = await Promise.all([
+      this.fetchTasksFor([id, ...opps.map((o) => o.id)]),
+      this.fetchOpportunityEmnr(opps.map((o) => o.id)),
+    ]);
+    return this.buildAccount(acc, opps, tasks, emnrByOpp, new Date());
   }
 
   // Feed has no dedicated signals table — synthesized from the sparse AI fields
@@ -356,13 +393,13 @@ export class SupabaseDataSource implements DataSource {
 
   private buildMarketGroup(
     acc: SfAccount,
-    oppAmountByAccount: Map<string, number>,
+    oppEmnrByAccount: Map<string, number>,
     assetSumByAccount: Map<string, number>,
   ): MarketGroup {
-    const oppAmt = oppAmountByAccount.get(acc.id);
+    const oppEmnr = oppEmnrByAccount.get(acc.id);
     const assetSum = assetSumByAccount.get(acc.id);
     let arrK: number;
-    if (oppAmt) arrK = Math.round(oppAmt / 1000);
+    if (oppEmnr) arrK = Math.round((oppEmnr * 12) / 1000); // annualize
     else if (assetSum) arrK = Math.round((assetSum * 12) / 1000); // annualize
     else if (acc.annual_turnover) arrK = Math.max(10, Math.round((acc.annual_turnover * 0.004) / 1000));
     else arrK = 50; // no financial signal at all
@@ -402,13 +439,17 @@ export class SupabaseDataSource implements DataSource {
       this.fetchOpenOpportunities(ids),
       this.fetchAssetSums(ids),
     ]);
-    const oppAmountByAccount = new Map<string, number>();
+    const emnrByOpp = await this.fetchOpportunityEmnr(opps.map((o) => o.id));
+    const oppEmnrByAccount = new Map<string, number>();
     for (const o of opps) {
       if (!o.account_id) continue;
-      oppAmountByAccount.set(o.account_id, (oppAmountByAccount.get(o.account_id) ?? 0) + (o.amount ?? 0));
+      oppEmnrByAccount.set(
+        o.account_id,
+        (oppEmnrByAccount.get(o.account_id) ?? 0) + (emnrByOpp.get(o.id) ?? 0),
+      );
     }
 
-    return (accounts ?? []).map((a) => this.buildMarketGroup(a, oppAmountByAccount, assetSums));
+    return (accounts ?? []).map((a) => this.buildMarketGroup(a, oppEmnrByAccount, assetSums));
   }
 
   async getMarketGroup(id: string): Promise<MarketGroup | undefined> {
@@ -426,11 +467,14 @@ export class SupabaseDataSource implements DataSource {
       this.fetchOpenOpportunities([id]),
       this.fetchAssetSums([id]),
     ]);
-    const oppAmountByAccount = new Map<string, number>();
+    const emnrByOpp = await this.fetchOpportunityEmnr(opps.map((o) => o.id));
+    const oppEmnrByAccount = new Map<string, number>();
     for (const o of opps) {
-      if (o.account_id) oppAmountByAccount.set(o.account_id, (oppAmountByAccount.get(o.account_id) ?? 0) + (o.amount ?? 0));
+      if (o.account_id) {
+        oppEmnrByAccount.set(o.account_id, (oppEmnrByAccount.get(o.account_id) ?? 0) + (emnrByOpp.get(o.id) ?? 0));
+      }
     }
-    return this.buildMarketGroup(acc, oppAmountByAccount, assetSums);
+    return this.buildMarketGroup(acc, oppEmnrByAccount, assetSums);
   }
 
   async addToBook(marketGroupId: string): Promise<Account> {
