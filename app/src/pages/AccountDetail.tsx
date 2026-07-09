@@ -5,6 +5,7 @@ import { tierFor, initials, avatarColors, arr, firstName } from "../lib/format";
 import { computeHealth } from "../lib/health";
 import { useAppState } from "../state/AppState";
 import { useNav } from "../state/nav";
+import { SignalCard } from "../components/SignalCard";
 import { DEAL_STAGES } from "../types";
 
 export function AccountDetail() {
@@ -174,8 +175,19 @@ export function AccountDetail() {
             </div>
           </div>
 
+          {account.signalCards.length > 0 && (
+            <div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)", marginBottom: 16 }}>Signals</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {account.signalCards.map((sc) => (
+                  <SignalCard key={sc.id} type={sc.type} time={sc.time} title={sc.title} body={sc.body} />
+                ))}
+              </div>
+            </div>
+          )}
+
           <div style={{ background: "var(--white)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: 20, boxShadow: "var(--shadow-sm)" }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)", marginBottom: 16 }}>Activity & signals</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)", marginBottom: 16 }}>Activity</div>
             <div style={{ display: "flex", flexDirection: "column" }}>
               {account.timeline.map((t, i) => {
                 const meta = TYPE_META[t.type];

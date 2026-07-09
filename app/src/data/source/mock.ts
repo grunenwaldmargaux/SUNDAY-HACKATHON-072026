@@ -69,6 +69,7 @@ export class MockDataSource implements DataSource {
       nba: [],
       timeline: [],
       signals: group.fit,
+      signalCards: [],
     };
     this.accounts.push(placeholder);
     return { ...placeholder };

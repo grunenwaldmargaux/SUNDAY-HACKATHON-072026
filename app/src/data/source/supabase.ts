@@ -7,6 +7,7 @@ import type {
   Me,
   MarketGroup,
   NextBestAction,
+  SignalCardData,
   SignalType,
   Task,
   TimelineItem,
@@ -394,22 +395,20 @@ export class SupabaseDataSource implements DataSource {
     const accountSignals = sillageSignalsByAccount.get(acc.id) ?? [];
     const accountContacts = sillageContactsByAccount.get(acc.id) ?? [];
 
-    const taskTimeline: (TimelineItem & { sortDate: string })[] = accountTasks.slice(0, 8).map((t) => ({
+    const timeline: TimelineItem[] = accountTasks.slice(0, 8).map((t) => ({
       type: timelineTypeFor(t),
       text: t.subject || `${t.task_subtype ?? t.type ?? "Activity"} logged`,
       time: t.activity_date ?? "",
-      sortDate: t.activity_date ?? "",
     }));
-    const signalTimeline: (TimelineItem & { sortDate: string })[] = accountSignals.map((s) => ({
+
+    // Same shape/visual as Feed's real-signal cards (SignalCard) — the point
+    // is this account's signals look identical whether seen on the Feed or here.
+    const signalCards: SignalCardData[] = accountSignals.map((s) => ({
+      id: `sillage-${s.id}`,
       type: sillageSignalType(s.signal_type),
-      text: sillageSignalText(s, accountName).title,
-      time: s.signal_date ? s.signal_date.slice(0, 10) : "",
-      sortDate: s.signal_date ?? "",
+      time: s.signal_date ? s.signal_date.slice(0, 10) : "Recently",
+      ...sillageSignalText(s, accountName),
     }));
-    const timeline: TimelineItem[] = [...taskTimeline, ...signalTimeline]
-      .sort((a, b) => (b.sortDate ?? "").localeCompare(a.sortDate ?? ""))
-      .slice(0, 10)
-      .map(({ sortDate: _sortDate, ...t }) => t);
 
     const committee: CommitteeMember[] = accountContacts.map((c) => ({
       name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Unknown contact",
@@ -440,6 +439,7 @@ export class SupabaseDataSource implements DataSource {
       nba,
       timeline,
       signals: accountSignals.map((s) => sillageSignalText(s, accountName).title),
+      signalCards,
       daysInStage,
       daysSinceLastActivity,
     };
@@ -766,6 +766,7 @@ export class SupabaseDataSource implements DataSource {
       nba: [],
       timeline: [],
       signals: group.fit,
+      signalCards: [],
     };
     // Session-local only — see the "book table" note in supabaseSchema.ts.
     this.book.set(marketGroupId, placeholder);

@@ -54,6 +54,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "expansion", text: "Group announced 6 new sites for 2026 (Shoreditch, Leeds, Bristol…)", time: "4 days ago" },
       { type: "reviews", text: "Live sites now averaging 4.7★ on Google (+0.3 since sunday)", time: "2 weeks ago" },
     ],
+    signalCards: [],
     signals: ["£310k master renewal window opens in 45 days", "9 of 24 venues still on a legacy provider", "Champion engaged, economic buyer not yet", "Group expanding by 6 sites in 2026"],
   },
   {
@@ -75,6 +76,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "rfp", text: "Procurement issued a formal RFP for group payments", time: "2 days ago" },
       { type: "decision", text: "Tom Reilly (Procurement) added as evaluator", time: "3 days ago" },
     ],
+    signalCards: [],
     signals: ["Formal RFP across all 41 venues", "£420k potential — largest live deal", "Champion (COO) sponsoring internally"],
   },
   {
@@ -96,6 +98,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "competitor", text: "SumUp (incumbent) contract confirmed ending Q3", time: "5 days ago" },
       { type: "ai", text: "Agent detected renewal window on incumbent contract", time: "6 days ago" },
     ],
+    signalCards: [],
     signals: ["Incumbent contract ends this quarter", "£180k across 12 premium venues", "Champion prioritises online reputation"],
   },
   {
@@ -117,6 +120,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "funding", text: "Announced £22M Series B led by Balderton", time: "3 days ago" },
       { type: "decision", text: "Nadia Khan appointed Group CFO (ex-Leon)", time: "2 weeks ago" },
     ],
+    signalCards: [],
     signals: ["£22M Series B → tooling budget", "60 venues = largest potential ARR", "New CFO = fresh evaluation window"],
   },
   {
@@ -138,6 +142,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "decision", text: "Leah Roy appointed Group Ops Director (ex-Honest Burgers)", time: "1 week ago" },
       { type: "expansion", text: "Group opened 4 new sites in the South West", time: "3 weeks ago" },
     ],
+    signalCards: [],
     signals: ["New Group Ops Director already knows the product", "30 venues, coffee = high transaction volume", "No enterprise incumbent detected"],
   },
   {
@@ -159,6 +164,7 @@ export const MOCK_ACCOUNTS: Account[] = [
       { type: "reviews", text: "Group Google average dropped across the estate", time: "This week" },
       { type: "press", text: "Trade press noted declining guest sentiment", time: "2 weeks ago" },
     ],
+    signalCards: [],
     signals: ["Board-level pressure on reputation", "£380k across 85 managed sites", "No committee member engaged yet — greenfield"],
   },
 ];

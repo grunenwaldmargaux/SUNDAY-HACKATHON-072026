@@ -55,6 +55,16 @@ export type TimelineItem = {
   time: string;
 };
 
+// Same shape rendered by SignalCard on both the Feed and an account page —
+// real Sillage signals should look identical in both places.
+export type SignalCardData = {
+  id: string;
+  type: SignalType;
+  time: string;
+  title: string;
+  body: string;
+};
+
 export type Account = {
   id: string;
   name: string;
@@ -75,6 +85,7 @@ export type Account = {
   nba: NextBestAction[];
   timeline: TimelineItem[];
   signals: string[];
+  signalCards: SignalCardData[];
 
   // deal-health inputs — the score itself is computed client-side, see lib/health.ts
   daysInStage: number;
