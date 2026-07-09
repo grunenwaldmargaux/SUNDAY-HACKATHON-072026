@@ -1,6 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   Account,
+  CommitteeMember,
+  CommitteeTag,
   FeedItem,
   Me,
   MarketGroup,
@@ -109,13 +111,23 @@ function catFor(acc: Pick<SfAccount, "venue_type" | "industry">): string {
   return acc.venue_type || acc.industry || "Restaurant group";
 }
 
-function splitBullets(text: string | null): string[] {
-  if (!text) return [];
-  return text
-    .split(/\r?\n|;|(?<=\.)\s+(?=[A-Z])/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .slice(0, 6);
+type SfContact = {
+  mapping_id: number;
+  first_name: string | null;
+  last_name: string | null;
+  position: string | null;
+  linkedin_url: string | null;
+};
+
+// Sillage contacts have no CRM-style buying-committee tag — best-effort guess
+// from job title so they still render in the existing "Buying committee" UI.
+function tagForPosition(position: string | null): CommitteeTag {
+  const p = (position ?? "").toLowerCase();
+  if (p.includes("ceo") || p.includes("founder") || p.includes("owner") || p.includes("managing director")) return "Economic buyer";
+  if (p.includes("cfo") || p.includes("finance")) return "Finance";
+  if (p.includes("cto") || p.includes("it ") || p.includes("technology") || p.includes("security")) return "IT & Security";
+  if (p.includes("procurement") || p.includes("purchasing")) return "Procurement";
+  return "Champion";
 }
 
 type SfSignal = {
@@ -160,28 +172,26 @@ function truncate(text: string, max: number): string {
   return text.length > max ? text.slice(0, max - 1).trimEnd() + "…" : text;
 }
 
-function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
+function sillageSignalText(s: SfSignal, accountName: string): { title: string; body: string } {
   const type = sillageSignalType(s.signal_type);
   const data = s.data ?? {};
-  const time = s.signal_date ? s.signal_date.slice(0, 10) : "Recently";
-  const base = { id: `sillage-${s.id}`, type, accountId: s.account_id ?? "", time };
 
   if (type === "keyword") {
     const keywords = (data.keywords_found as string[] | undefined)?.join(", ") ?? "a tracked topic";
-    return { ...base, title: `${s.author_name ?? "Someone"} posted about "${keywords}"`, body: s.excerpt ? truncate(s.excerpt, 160) : `${s.author_headline ?? ""}` };
+    return { title: `${s.author_name ?? "Someone"} posted about "${keywords}"`, body: s.excerpt ? truncate(s.excerpt, 160) : `${s.author_headline ?? ""}` };
   }
   if (type === "hiring") {
     const keywords = (data.keywords_found as string[] | undefined)?.join(", ") ?? "a tracked keyword";
     const posting = data.posting as { title?: string } | undefined;
-    return { ...base, title: `${accountName} is hiring — job posting mentions "${keywords}"`, body: posting?.title ? `Open role: ${posting.title}` : "" };
+    return { title: `${accountName} is hiring — job posting mentions "${keywords}"`, body: posting?.title ? `Open role: ${posting.title}` : "" };
   }
   if (type === "decision") {
     const prev = data.previous_position as { role?: string; company_name?: string } | undefined;
     const next = data.new_position as { role?: string; company_name?: string } | undefined;
     if (prev?.role) {
-      return { ...base, title: `${s.author_name ?? "A contact"} was promoted to ${next?.role ?? "a new role"}`, body: `Previously ${prev.role}${prev.company_name ? ` at ${prev.company_name}` : ""}.` };
+      return { title: `${s.author_name ?? "A contact"} was promoted to ${next?.role ?? "a new role"}`, body: `Previously ${prev.role}${prev.company_name ? ` at ${prev.company_name}` : ""}.` };
     }
-    return { ...base, title: `${s.author_name ?? "A contact"} started as ${next?.role ?? "a new role"} at ${next?.company_name ?? accountName}`, body: "New role — the first 90 days are unusually open to fresh conversations." };
+    return { title: `${s.author_name ?? "A contact"} started as ${next?.role ?? "a new role"} at ${next?.company_name ?? accountName}`, body: "New role — the first 90 days are unusually open to fresh conversations." };
   }
   // competitor / customer / partner / influencer / champion — all *InboundComment / *OutboundComment
   const interaction = data.interaction as { author?: { full_name?: string; headline?: string } } | undefined;
@@ -189,10 +199,39 @@ function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
   const otherParty = interaction?.author?.full_name ?? s.author_name ?? "Someone";
   const accountPerson = post?.author?.full_name ?? accountName;
   return {
-    ...base,
     title: `${otherParty} engaged with ${accountPerson}'s LinkedIn post`,
     body: INTERACTION_GUIDANCE[type] ?? "",
   };
+}
+
+function interleaveByAccount(items: FeedItem[]): FeedItem[] {
+  const byAccount = new Map<string, FeedItem[]>();
+  for (const item of items) {
+    if (!byAccount.has(item.accountId)) byAccount.set(item.accountId, []);
+    byAccount.get(item.accountId)!.push(item);
+  }
+  const queues = [...byAccount.values()];
+  const interleaved: FeedItem[] = [];
+  for (let i = 0; queues.some((q) => q.length > i); i++) {
+    for (const q of queues) if (q[i]) interleaved.push(q[i]);
+  }
+  return interleaved;
+}
+
+function groupByAccount(signals: SfSignal[]): Map<string, SfSignal[]> {
+  const byAccount = new Map<string, SfSignal[]>();
+  for (const s of signals) {
+    if (!s.account_id) continue;
+    if (!byAccount.has(s.account_id)) byAccount.set(s.account_id, []);
+    byAccount.get(s.account_id)!.push(s);
+  }
+  return byAccount;
+}
+
+function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
+  const type = sillageSignalType(s.signal_type);
+  const time = s.signal_date ? s.signal_date.slice(0, 10) : "Recently";
+  return { id: `sillage-${s.id}`, type, accountId: s.account_id ?? "", time, ...sillageSignalText(s, accountName) };
 }
 
 // Sales activities aren't signal categories — this is a best-effort bucket so the
@@ -284,11 +323,39 @@ export class SupabaseDataSource implements DataSource {
     return data ?? [];
   }
 
+  private async fetchSillageContacts(accountIds: string[]): Promise<Map<string, SfContact[]>> {
+    const byAccount = new Map<string, SfContact[]>();
+    if (accountIds.length === 0) return byAccount;
+    const { data: companies, error: compErr } = await this.client
+      .from("sillage_companies")
+      .select("mapping_id, account_id")
+      .in("account_id", accountIds);
+    if (compErr) throw compErr;
+    const accountIdByMapping = new Map((companies ?? []).map((c) => [c.mapping_id as number, c.account_id as string]));
+    const mappingIds = [...accountIdByMapping.keys()];
+    if (mappingIds.length === 0) return byAccount;
+
+    const { data: contacts, error: contactErr } = await this.client
+      .from("sillage_contacts")
+      .select("mapping_id, first_name, last_name, position, linkedin_url")
+      .in("mapping_id", mappingIds);
+    if (contactErr) throw contactErr;
+    for (const c of (contacts ?? []) as SfContact[]) {
+      const accountId = accountIdByMapping.get(c.mapping_id);
+      if (!accountId) continue;
+      if (!byAccount.has(accountId)) byAccount.set(accountId, []);
+      byAccount.get(accountId)!.push(c);
+    }
+    return byAccount;
+  }
+
   private buildAccount(
     acc: SfAccount,
     opps: SfOpportunity[],
     tasks: SfTask[],
     emnrByOpp: Map<string, number>,
+    sillageSignalsByAccount: Map<string, SfSignal[]>,
+    sillageContactsByAccount: Map<string, SfContact[]>,
     now: Date,
   ): Account {
     const accountOpps = opps.filter((o) => o.account_id === acc.id);
@@ -321,10 +388,32 @@ export class SupabaseDataSource implements DataSource {
       });
     }
 
-    const timeline: TimelineItem[] = accountTasks.slice(0, 8).map((t) => ({
+    const accountName = acc.name ?? "Unnamed account";
+    const accountSignals = sillageSignalsByAccount.get(acc.id) ?? [];
+    const accountContacts = sillageContactsByAccount.get(acc.id) ?? [];
+
+    const taskTimeline: (TimelineItem & { sortDate: string })[] = accountTasks.slice(0, 8).map((t) => ({
       type: timelineTypeFor(t),
       text: t.subject || `${t.task_subtype ?? t.type ?? "Activity"} logged`,
       time: t.activity_date ?? "",
+      sortDate: t.activity_date ?? "",
+    }));
+    const signalTimeline: (TimelineItem & { sortDate: string })[] = accountSignals.map((s) => ({
+      type: sillageSignalType(s.signal_type),
+      text: sillageSignalText(s, accountName).title,
+      time: s.signal_date ? s.signal_date.slice(0, 10) : "",
+      sortDate: s.signal_date ?? "",
+    }));
+    const timeline: TimelineItem[] = [...taskTimeline, ...signalTimeline]
+      .sort((a, b) => (b.sortDate ?? "").localeCompare(a.sortDate ?? ""))
+      .slice(0, 10)
+      .map(({ sortDate: _sortDate, ...t }) => t);
+
+    const committee: CommitteeMember[] = accountContacts.map((c) => ({
+      name: `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Unknown contact",
+      role: c.position ?? "Contact",
+      tag: tagForPosition(c.position),
+      engaged: false,
     }));
 
     return {
@@ -342,10 +431,10 @@ export class SupabaseDataSource implements DataSource {
       reason: acc.ai_summary || acc.ai_agent_reasoning || "No agent analysis yet — assign to agent to enrich this account.",
       reasonIcon: "sparkles",
       nextAction: acc.ai_agent_reasoning || acc.ai_summary || "Assign to agent to generate a next-best-action.",
-      committee: [], // no Contact / OpportunityContactRole table in this mirror
+      committee, // from sillage_contacts, not Salesforce Contact/OpportunityContactRole
       nba,
       timeline,
-      signals: splitBullets(acc.ai_signals) ?? [],
+      signals: accountSignals.map((s) => sillageSignalText(s, accountName).title),
       daysInStage,
       daysSinceLastActivity,
     };
@@ -367,13 +456,17 @@ export class SupabaseDataSource implements DataSource {
 
     const accountIds = (accounts ?? []).map((a) => a.id);
     const opps = await this.fetchOpenOpportunities(accountIds);
-    const [tasks, emnrByOpp] = await Promise.all([
+    const [tasks, emnrByOpp, sillageSignalsByAccount, sillageContactsByAccount] = await Promise.all([
       this.fetchTasksFor([...accountIds, ...opps.map((o) => o.id)]),
       this.fetchOpportunityEmnr(opps.map((o) => o.id)),
+      this.fetchSillageSignals(accountIds).then(groupByAccount),
+      this.fetchSillageContacts(accountIds),
     ]);
     const now = new Date();
 
-    const built = (accounts ?? []).map((a) => this.buildAccount(a, opps, tasks, emnrByOpp, now));
+    const built = (accounts ?? []).map((a) =>
+      this.buildAccount(a, opps, tasks, emnrByOpp, sillageSignalsByAccount, sillageContactsByAccount, now),
+    );
     return [...built, ...this.book.values()];
   }
 
@@ -390,11 +483,13 @@ export class SupabaseDataSource implements DataSource {
     if (!acc) return undefined;
 
     const opps = await this.fetchOpenOpportunities([id]);
-    const [tasks, emnrByOpp] = await Promise.all([
+    const [tasks, emnrByOpp, sillageSignalsByAccount, sillageContactsByAccount] = await Promise.all([
       this.fetchTasksFor([id, ...opps.map((o) => o.id)]),
       this.fetchOpportunityEmnr(opps.map((o) => o.id)),
+      this.fetchSillageSignals([id]).then(groupByAccount),
+      this.fetchSillageContacts([id]),
     ]);
-    return this.buildAccount(acc, opps, tasks, emnrByOpp, new Date());
+    return this.buildAccount(acc, opps, tasks, emnrByOpp, sillageSignalsByAccount, sillageContactsByAccount, new Date());
   }
 
   // Task.WhatId is polymorphic — usually an Account, sometimes an Opportunity.
@@ -493,12 +588,13 @@ export class SupabaseDataSource implements DataSource {
   // keyword-matched guess. See lib/signalMeta.ts for the 8 Sillage types.
   async getFeed(): Promise<FeedItem[]> {
     const accounts = await this.getAccounts();
-    const items: FeedItem[] = [];
     const accountNameById = new Map(accounts.map((a) => [a.id, a.name]));
 
+    const stallItems: FeedItem[] = [];
+    const aiItems: FeedItem[] = [];
     for (const acc of accounts) {
       if (acc.daysSinceLastActivity > 14 || acc.daysInStage > 30) {
-        items.push({
+        stallItems.push({
           id: `stall-${acc.id}`,
           type: "stall",
           accountId: acc.id,
@@ -510,7 +606,7 @@ export class SupabaseDataSource implements DataSource {
         });
       }
       if (acc.reason && !acc.reason.startsWith("No agent analysis")) {
-        items.push({
+        aiItems.push({
           id: `ai-${acc.id}`,
           type: "ai",
           accountId: acc.id,
@@ -524,12 +620,16 @@ export class SupabaseDataSource implements DataSource {
     }
 
     const signals = await this.fetchSillageSignals(accounts.map((a) => a.id));
-    for (const s of signals) {
-      if (!s.account_id) continue;
-      items.push(buildSillageFeedItem(s, accountNameById.get(s.account_id) ?? "this account"));
-    }
+    const signalItems = signals
+      .filter((s) => s.account_id)
+      .map((s) => buildSillageFeedItem(s, accountNameById.get(s.account_id!) ?? "this account"));
 
-    return items;
+    // Real Sillage signals lead the feed (round-robined across accounts so
+    // several companies show up before repeating one), then stall alerts,
+    // then agent insights — otherwise the many "gone quiet" alerts (most
+    // top accounts are dormant in this dataset) bury the real signals below
+    // the fold before a user ever sees them.
+    return [...interleaveByAccount(signalItems), ...interleaveByAccount(stallItems), ...interleaveByAccount(aiItems)];
   }
 
   private async fetchAssetSums(accountIds: string[]): Promise<Map<string, number>> {

@@ -232,10 +232,10 @@ export function AccountDetail() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-                {account.committee.map((m) => {
+                {account.committee.map((m, i) => {
                   const roleMeta = ROLE_META[m.tag] ?? ROLE_META.Procurement;
                   return (
-                    <div key={m.name} style={{ display: "flex", alignItems: "center", gap: 11 }}>
+                    <div key={`${m.name}-${i}`} style={{ display: "flex", alignItems: "center", gap: 11 }}>
                       <span style={{ width: 38, height: 38, flex: "0 0 auto", borderRadius: "50%", background: "var(--ink-100)", color: "var(--ink-700)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 13, fontWeight: 600 }}>
                         {initials(m.name)}
                       </span>
