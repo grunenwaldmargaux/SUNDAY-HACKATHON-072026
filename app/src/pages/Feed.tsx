@@ -6,14 +6,18 @@ import { useAppState } from "../state/AppState";
 import { useNav } from "../state/nav";
 import { GamificationStrip } from "../components/GamificationStrip";
 import { SignalCard } from "../components/SignalCard";
+import { EmailDraftModal } from "../components/EmailDraftModal";
 import type { Account } from "../types";
 
 type FeedFilter = "all" | "signals" | "ai";
+
+const GAMMA_ACTION = "Generate deck";
 
 export function Feed() {
   const { me, accounts, feed, dismissed, dismissFeedItem, addXp, progressQuest, say } = useAppState();
   const nav = useNav();
   const [filter, setFilter] = useState<FeedFilter>("all");
+  const [draftEmail, setDraftEmail] = useState<string | null>(null);
 
   const byId = useMemo(() => Object.fromEntries(accounts.map((a) => [a.id, a])), [accounts]);
 
@@ -91,7 +95,15 @@ export function Feed() {
                     onOpenAccount={nav.openAccount}
                     onWhyThis={() => say(`Why this? · ${account.name}`, "sparkles")}
                     actionLabel={item.primary}
-                    onAction={() => { addXp(60, `${item.primary} — ${account.name}`, "sparkles"); progressQuest("q1"); }}
+                    onAction={() => {
+                      if (item.primary === GAMMA_ACTION && item.emailContent) {
+                        window.open(item.emailContent, "_blank");
+                        return;
+                      }
+                      if (item.emailContent) setDraftEmail(item.emailContent);
+                      addXp(60, `${item.primary} — ${account.name}`, "sparkles");
+                      progressQuest("q1");
+                    }}
                   />
                 );
               }
@@ -207,6 +219,7 @@ export function Feed() {
           </div>
         </div>
       </div>
+      {draftEmail && <EmailDraftModal content={draftEmail} onClose={() => setDraftEmail(null)} />}
     </div>
   );
 }

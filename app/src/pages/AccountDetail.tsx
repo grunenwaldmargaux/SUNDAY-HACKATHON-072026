@@ -6,12 +6,16 @@ import { computeHealth } from "../lib/health";
 import { useAppState } from "../state/AppState";
 import { useNav } from "../state/nav";
 import { SignalCard } from "../components/SignalCard";
+import { EmailDraftModal } from "../components/EmailDraftModal";
 import { DEAL_STAGES } from "../types";
+
+const GAMMA_ACTION = "Generate deck";
 
 export function AccountDetail() {
   const { accounts, isFollowing, toggleFollow, addXp, progressQuest, say } = useAppState();
   const nav = useNav();
   const [expandedContact, setExpandedContact] = useState<number | null>(null);
+  const [draftEmail, setDraftEmail] = useState<string | null>(null);
 
   const account = accounts.find((a) => a.id === nav.acctId) ?? accounts[0];
   if (!account) {
@@ -180,7 +184,22 @@ export function AccountDetail() {
               <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)", marginBottom: 16 }}>Signals</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {account.signalCards.map((sc) => (
-                  <SignalCard key={sc.id} type={sc.type} time={sc.time} title={sc.title} body={sc.body} actionLabel={sc.actionName} onAction={() => say(`${sc.actionName} · ${account.name}`, "sparkles")} />
+                  <SignalCard
+                    key={sc.id}
+                    type={sc.type}
+                    time={sc.time}
+                    title={sc.title}
+                    body={sc.body}
+                    actionLabel={sc.actionName}
+                    onAction={() => {
+                      if (sc.actionName === GAMMA_ACTION && sc.emailContent) {
+                        window.open(sc.emailContent, "_blank");
+                        return;
+                      }
+                      if (sc.emailContent) setDraftEmail(sc.emailContent);
+                      say(`${sc.actionName} · ${account.name}`, "sparkles");
+                    }}
+                  />
                 ))}
               </div>
             </div>
@@ -327,6 +346,7 @@ export function AccountDetail() {
           </div>
         </div>
       </div>
+      {draftEmail && <EmailDraftModal content={draftEmail} onClose={() => setDraftEmail(null)} />}
     </div>
   );
 }

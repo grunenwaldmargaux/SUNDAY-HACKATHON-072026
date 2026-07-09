@@ -144,6 +144,7 @@ type SfSignal = {
   excerpt: string | null;
   data: Record<string, unknown> | null;
   action_name: string | null;
+  email_content: string | null;
 };
 
 // sillage_signals.signal_type -> our SignalType. Competitor and job-move
@@ -241,6 +242,7 @@ function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
     accountId: s.account_id ?? "",
     time,
     primary: s.action_name ?? "Assign to agent",
+    emailContent: s.email_content,
     ...sillageSignalText(s, accountName),
   };
 }
@@ -416,6 +418,7 @@ export class SupabaseDataSource implements DataSource {
       type: sillageSignalType(s.signal_type),
       time: s.signal_date ? s.signal_date.slice(0, 10) : "Recently",
       actionName: s.action_name ?? "Assign to agent",
+      emailContent: s.email_content,
       ...sillageSignalText(s, accountName),
     }));
 
@@ -588,7 +591,7 @@ export class SupabaseDataSource implements DataSource {
     if (accountIds.length === 0) return [];
     const { data, error } = await this.client
       .from("sillage_signals")
-      .select("id, signal_type, account_id, signal_date, source_url, author_name, author_headline, excerpt, data, action_name")
+      .select("id, signal_type, account_id, signal_date, source_url, author_name, author_headline, excerpt, data, action_name, email_content")
       .in("account_id", accountIds)
       .order("signal_date", { ascending: false });
     if (error) throw error;

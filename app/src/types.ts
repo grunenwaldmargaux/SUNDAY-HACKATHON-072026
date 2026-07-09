@@ -64,6 +64,7 @@ export type SignalCardData = {
   title: string;
   body: string;
   actionName: string;
+  emailContent: string | null;
 };
 
 export type Account = {
@@ -114,6 +115,7 @@ export type FeedItem = {
   body: string;
   isAI?: boolean;
   primary?: string;
+  emailContent?: string | null;
 };
 
 export type ICPFit = "High" | "Medium" | "Low";
