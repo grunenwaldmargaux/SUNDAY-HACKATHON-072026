@@ -63,6 +63,7 @@ export type SignalCardData = {
   time: string;
   title: string;
   body: string;
+  actionName: string;
 };
 
 export type Account = {

@@ -90,6 +90,8 @@ export function Feed() {
                     account={{ id: account.id, name: account.name, avatarSeed: accounts.indexOf(account) }}
                     onOpenAccount={nav.openAccount}
                     onWhyThis={() => say(`Why this? · ${account.name}`, "sparkles")}
+                    actionLabel={item.primary}
+                    onAction={() => { addXp(60, `${item.primary} — ${account.name}`, "sparkles"); progressQuest("q1"); }}
                   />
                 );
               }

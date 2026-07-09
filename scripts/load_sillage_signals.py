@@ -94,9 +94,29 @@ create table if not exists sillage_signals (
     author_linkedin_url text,
     excerpt text,
     data jsonb,
+    action_name text,
     loaded_at timestamptz default now()
 );
 """
+
+# Button label shown on the signal card, per Sillage signal_type — mirrors
+# the playbook's suggested_action, condensed to a short CTA.
+ACTION_NAME_BY_SIGNAL_TYPE = {
+    "keywordDetection": "Reference their post",
+    "jobPostingKeywordDetection": "Flag open role",
+    "recentlyPromoted": "Send congrats",
+    "newJob": "Send congrats",
+    "competitorInboundComment": "Reach out now",
+    "competitorOutboundComment": "Reach out now",
+    "customerInboundComment": "Ask for intro",
+    "customerOutboundComment": "Ask for intro",
+    "partnerInboundComment": "Ask for intro",
+    "partnerOutboundComment": "Ask for intro",
+    "influencerInboundComment": "Join conversation",
+    "influencerOutboundComment": "Join conversation",
+    "championInboundComment": "Ask champion to intro",
+    "championOutboundComment": "Ask champion to intro",
+}
 
 
 def build_upsert(table, rows, conflict_cols):
@@ -198,6 +218,7 @@ def main():
             "author_linkedin_url": author_linkedin,
             "excerpt": s.get("excerpt"),
             "data": s.get("data"),
+            "action_name": ACTION_NAME_BY_SIGNAL_TYPE.get(s["signal_type"], "Assign to agent"),
         })
 
     print("Loading into Supabase...")

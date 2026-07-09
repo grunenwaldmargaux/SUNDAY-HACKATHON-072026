@@ -143,6 +143,7 @@ type SfSignal = {
   author_headline: string | null;
   excerpt: string | null;
   data: Record<string, unknown> | null;
+  action_name: string | null;
 };
 
 // sillage_signals.signal_type -> our SignalType. Competitor and job-move
@@ -234,7 +235,14 @@ function groupByAccount(signals: SfSignal[]): Map<string, SfSignal[]> {
 function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
   const type = sillageSignalType(s.signal_type);
   const time = s.signal_date ? s.signal_date.slice(0, 10) : "Recently";
-  return { id: `sillage-${s.id}`, type, accountId: s.account_id ?? "", time, ...sillageSignalText(s, accountName) };
+  return {
+    id: `sillage-${s.id}`,
+    type,
+    accountId: s.account_id ?? "",
+    time,
+    primary: s.action_name ?? "Assign to agent",
+    ...sillageSignalText(s, accountName),
+  };
 }
 
 // Sales activities aren't signal categories — this is a best-effort bucket so the
@@ -407,6 +415,7 @@ export class SupabaseDataSource implements DataSource {
       id: `sillage-${s.id}`,
       type: sillageSignalType(s.signal_type),
       time: s.signal_date ? s.signal_date.slice(0, 10) : "Recently",
+      actionName: s.action_name ?? "Assign to agent",
       ...sillageSignalText(s, accountName),
     }));
 
@@ -579,7 +588,7 @@ export class SupabaseDataSource implements DataSource {
     if (accountIds.length === 0) return [];
     const { data, error } = await this.client
       .from("sillage_signals")
-      .select("id, signal_type, account_id, signal_date, source_url, author_name, author_headline, excerpt, data")
+      .select("id, signal_type, account_id, signal_date, source_url, author_name, author_headline, excerpt, data, action_name")
       .in("account_id", accountIds)
       .order("signal_date", { ascending: false });
     if (error) throw error;

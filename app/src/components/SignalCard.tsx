@@ -5,7 +5,8 @@ import type { SignalType } from "../types";
 
 // Shared visual for a signal, used identically on the Feed and on an
 // account's "Activity & signals" — same card, header, and type styling
-// everywhere a signal is shown. No "Assign to agent" action here.
+// everywhere a signal is shown. The action button's label comes from
+// sillage_signals.action_name (per signal_type), not a fixed "Assign to agent".
 export function SignalCard({
   type,
   time,
@@ -14,6 +15,8 @@ export function SignalCard({
   account,
   onOpenAccount,
   onWhyThis,
+  actionLabel,
+  onAction,
 }: {
   type: SignalType;
   time: string;
@@ -22,6 +25,8 @@ export function SignalCard({
   account?: { id: string; name: string; avatarSeed: number };
   onOpenAccount?: (id: string) => void;
   onWhyThis?: () => void;
+  actionLabel?: string;
+  onAction?: () => void;
 }) {
   const meta = TYPE_META[type];
   const [avBg, avColor] = account ? avatarColors(account.avatarSeed) : ["", ""];
@@ -43,7 +48,7 @@ export function SignalCard({
         </div>
       </div>
 
-      {(account || onWhyThis) && (
+      {(account || onWhyThis || actionLabel) && (
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--ink-100)" }}>
           {account && (
             <button
@@ -61,6 +66,15 @@ export function SignalCard({
           {onWhyThis && (
             <button onClick={onWhyThis} style={{ border: "none", background: "transparent", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 500, color: "var(--ink-500)", padding: "8px 10px", borderRadius: "var(--radius-pill)" }}>
               Why this?
+            </button>
+          )}
+          {actionLabel && (
+            <button
+              onClick={onAction}
+              style={{ display: "flex", alignItems: "center", gap: 7, border: "none", cursor: "pointer", background: "var(--ink-950)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, borderRadius: "var(--radius-pill)", padding: "8px 15px" }}
+            >
+              <Icon name="sparkles" size={15} color="#fff" />
+              {actionLabel}
             </button>
           )}
         </div>

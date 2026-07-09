@@ -180,7 +180,7 @@ export function AccountDetail() {
               <div style={{ fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)", marginBottom: 16 }}>Signals</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {account.signalCards.map((sc) => (
-                  <SignalCard key={sc.id} type={sc.type} time={sc.time} title={sc.title} body={sc.body} />
+                  <SignalCard key={sc.id} type={sc.type} time={sc.time} title={sc.title} body={sc.body} actionLabel={sc.actionName} onAction={() => say(`${sc.actionName} · ${account.name}`, "sparkles")} />
                 ))}
               </div>
             </div>
