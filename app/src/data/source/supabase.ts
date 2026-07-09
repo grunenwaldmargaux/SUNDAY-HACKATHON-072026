@@ -118,6 +118,83 @@ function splitBullets(text: string | null): string[] {
     .slice(0, 6);
 }
 
+type SfSignal = {
+  id: number;
+  signal_type: string;
+  account_id: string | null;
+  signal_date: string | null;
+  source_url: string | null;
+  author_name: string | null;
+  author_headline: string | null;
+  excerpt: string | null;
+  data: Record<string, unknown> | null;
+};
+
+// sillage_signals.signal_type -> our SignalType. Competitor and job-move
+// signals reuse the existing "competitor"/"decision" categories rather than
+// duplicating them; the rest are Sillage-specific additions (see signalMeta.ts).
+function sillageSignalType(raw: string): SignalType {
+  if (raw === "keywordDetection") return "keyword";
+  if (raw === "jobPostingKeywordDetection") return "hiring";
+  if (raw === "recentlyPromoted" || raw === "newJob") return "decision";
+  if (raw.startsWith("competitor")) return "competitor";
+  if (raw.startsWith("customer")) return "customer";
+  if (raw.startsWith("partner")) return "partner";
+  if (raw.startsWith("influencer")) return "influencer";
+  if (raw.startsWith("champion")) return "champion";
+  return "decision";
+}
+
+// Playbook-derived guidance for the LinkedIn-interaction signal family
+// (competitor/customer/partner/influencer/champion), condensed to one line —
+// see sillage_v2_get_signal_playbook for the full reasoning per type.
+const INTERACTION_GUIDANCE: Partial<Record<SignalType, string>> = {
+  competitor: "A competitor is engaging with this account on LinkedIn — reach out and differentiate before they set the narrative.",
+  customer: "One of your customers is connected to this account — consider asking them for a warm introduction.",
+  partner: "A partner is connected to this account — a warm introduction path may exist.",
+  influencer: "An influencer this account follows is in the loop — a shared interest worth referencing.",
+  champion: "A champion you track is connected to this account — ask them to make the introduction.",
+};
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? text.slice(0, max - 1).trimEnd() + "…" : text;
+}
+
+function buildSillageFeedItem(s: SfSignal, accountName: string): FeedItem {
+  const type = sillageSignalType(s.signal_type);
+  const data = s.data ?? {};
+  const time = s.signal_date ? s.signal_date.slice(0, 10) : "Recently";
+  const base = { id: `sillage-${s.id}`, type, accountId: s.account_id ?? "", time };
+
+  if (type === "keyword") {
+    const keywords = (data.keywords_found as string[] | undefined)?.join(", ") ?? "a tracked topic";
+    return { ...base, title: `${s.author_name ?? "Someone"} posted about "${keywords}"`, body: s.excerpt ? truncate(s.excerpt, 160) : `${s.author_headline ?? ""}` };
+  }
+  if (type === "hiring") {
+    const keywords = (data.keywords_found as string[] | undefined)?.join(", ") ?? "a tracked keyword";
+    const posting = data.posting as { title?: string } | undefined;
+    return { ...base, title: `${accountName} is hiring — job posting mentions "${keywords}"`, body: posting?.title ? `Open role: ${posting.title}` : "" };
+  }
+  if (type === "decision") {
+    const prev = data.previous_position as { role?: string; company_name?: string } | undefined;
+    const next = data.new_position as { role?: string; company_name?: string } | undefined;
+    if (prev?.role) {
+      return { ...base, title: `${s.author_name ?? "A contact"} was promoted to ${next?.role ?? "a new role"}`, body: `Previously ${prev.role}${prev.company_name ? ` at ${prev.company_name}` : ""}.` };
+    }
+    return { ...base, title: `${s.author_name ?? "A contact"} started as ${next?.role ?? "a new role"} at ${next?.company_name ?? accountName}`, body: "New role — the first 90 days are unusually open to fresh conversations." };
+  }
+  // competitor / customer / partner / influencer / champion — all *InboundComment / *OutboundComment
+  const interaction = data.interaction as { author?: { full_name?: string; headline?: string } } | undefined;
+  const post = data.post as { author?: { full_name?: string } } | undefined;
+  const otherParty = interaction?.author?.full_name ?? s.author_name ?? "Someone";
+  const accountPerson = post?.author?.full_name ?? accountName;
+  return {
+    ...base,
+    title: `${otherParty} engaged with ${accountPerson}'s LinkedIn post`,
+    body: INTERACTION_GUIDANCE[type] ?? "",
+  };
+}
+
 // Sales activities aren't signal categories — this is a best-effort bucket so the
 // account timeline has some visual variety instead of one flat icon.
 function timelineTypeFor(task: SfTask): SignalType {
@@ -128,19 +205,6 @@ function timelineTypeFor(task: SfTask): SignalType {
   if (s.includes("expansion") || s.includes("new site") || s.includes("opening")) return "expansion";
   if (s.includes("review") || s.includes("reputation")) return "reviews";
   if (s.includes("press") || s.includes("media")) return "press";
-  return "decision";
-}
-
-function feedTypeFromSignalLine(line: string): SignalType {
-  const s = line.toLowerCase();
-  if (s.includes("rfp") || s.includes("tender")) return "rfp";
-  if (s.includes("competitor") || s.includes("incumbent") || s.includes("sumup") || s.includes("switch"))
-    return "competitor";
-  if (s.includes("funding") || s.includes("series") || s.includes("raise")) return "funding";
-  if (s.includes("expand") || s.includes("new site") || s.includes("opening")) return "expansion";
-  if (s.includes("review") || s.includes("reputation") || s.includes("star")) return "reviews";
-  if (s.includes("press") || s.includes("media") || s.includes("caterer")) return "press";
-  if (s.includes("appoint") || s.includes("hire") || s.includes("cfo") || s.includes("director")) return "decision";
   return "decision";
 }
 
@@ -411,11 +475,26 @@ export class SupabaseDataSource implements DataSource {
     });
   }
 
-  // Feed has no dedicated signals table — synthesized from the sparse AI fields
-  // that are populated, plus computed stall detection. See supabaseSchema.ts.
+  private async fetchSillageSignals(accountIds: string[]): Promise<SfSignal[]> {
+    if (accountIds.length === 0) return [];
+    const { data, error } = await this.client
+      .from("sillage_signals")
+      .select("id, signal_type, account_id, signal_date, source_url, author_name, author_headline, excerpt, data")
+      .in("account_id", accountIds)
+      .order("signal_date", { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as SfSignal[];
+  }
+
+  // Stall detection and agent insight are computed from real Salesforce data
+  // (activity gaps, AI-agent fields) — kept as-is. The generic per-line
+  // "signals" bullets (guessed category from freetext) are replaced by
+  // sillage_signals: real, dated, sourced, attributed events instead of a
+  // keyword-matched guess. See lib/signalMeta.ts for the 8 Sillage types.
   async getFeed(): Promise<FeedItem[]> {
     const accounts = await this.getAccounts();
     const items: FeedItem[] = [];
+    const accountNameById = new Map(accounts.map((a) => [a.id, a.name]));
 
     for (const acc of accounts) {
       if (acc.daysSinceLastActivity > 14 || acc.daysInStage > 30) {
@@ -442,16 +521,12 @@ export class SupabaseDataSource implements DataSource {
           body: acc.nextAction,
         });
       }
-      for (const [i, line] of acc.signals.entries()) {
-        items.push({
-          id: `sig-${acc.id}-${i}`,
-          type: feedTypeFromSignalLine(line),
-          accountId: acc.id,
-          time: "Recently",
-          title: line,
-          body: `Signal on ${acc.name}.`,
-        });
-      }
+    }
+
+    const signals = await this.fetchSillageSignals(accounts.map((a) => a.id));
+    for (const s of signals) {
+      if (!s.account_id) continue;
+      items.push(buildSillageFeedItem(s, accountNameById.get(s.account_id) ?? "this account"));
     }
 
     return items;

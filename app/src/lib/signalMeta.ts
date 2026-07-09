@@ -10,6 +10,12 @@ export const TYPE_META: Record<SignalType, { label: string; color: string; tint:
   decision: { label: "Committee change", color: "#F79009", tint: "#FEF3E2", icon: "user-cog" },
   reviews: { label: "Reputation / board", color: "#F79009", tint: "#FEF3E2", icon: "star" },
   press: { label: "In the press", color: "#3A3A44", tint: "#F0F0F3", icon: "newspaper" },
+  keyword: { label: "Prospect signal", color: "#2E90FA", tint: "#E9F3FE", icon: "search" },
+  hiring: { label: "Hiring signal", color: "#12B76A", tint: "#E7F8F0", icon: "user-plus" },
+  customer: { label: "Customer connection", color: "#F79009", tint: "#FEF3E2", icon: "star" },
+  partner: { label: "Partner connection", color: "#2E90FA", tint: "#E9F3FE", icon: "users" },
+  influencer: { label: "Influencer connection", color: "#3A3A44", tint: "#F0F0F3", icon: "send" },
+  champion: { label: "Champion connection", color: "#DB00C4", tint: "#FFF0FD", icon: "flame" },
 };
 
 export const ROLE_META: Record<string, { color: string; bg: string }> = {

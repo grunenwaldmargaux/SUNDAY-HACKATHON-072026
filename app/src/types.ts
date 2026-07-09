@@ -11,7 +11,16 @@ export type SignalType =
   | "expansion"
   | "decision"
   | "reviews"
-  | "press";
+  | "press"
+  // Real Sillage signal types (sillage_signals.signal_type), matching its
+  // 8-type playbook. "competitor" and "decision" (job moves) reuse the
+  // categories above instead of duplicating them.
+  | "keyword"
+  | "hiring"
+  | "customer"
+  | "partner"
+  | "influencer"
+  | "champion";
 
 export type Tier = "Hot" | "Warm" | "Watch";
 
