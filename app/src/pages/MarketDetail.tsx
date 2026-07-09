@@ -93,12 +93,12 @@ export function MarketDetail() {
         </div>
         <div style={{ flex: "1 1 260px", minWidth: 260, display: "flex", flexDirection: "column", gap: 10 }}>
           <button
-            onClick={() => say(`Agent assigned to enrich ${group.name}`, "sparkles")}
+            onClick={() => say(`Agent finding the decision maker at ${group.name}`, "sparkles")}
             className="lift"
             style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, border: "1px solid var(--border-subtle)", background: "var(--white)", cursor: "pointer", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: 500, color: "var(--ink-900)", borderRadius: "var(--radius-pill)", padding: 12, boxShadow: "var(--shadow-sm)" }}
           >
             <Icon name="sparkles" size={17} color="var(--pink-600)" />
-            Assign to agent · enrich
+            Find decision maker
           </button>
           {fullAccount && (
             <button

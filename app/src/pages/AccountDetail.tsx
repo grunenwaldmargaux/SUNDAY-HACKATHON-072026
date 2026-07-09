@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { Icon } from "../lib/icons";
 import { TYPE_META, ROLE_META } from "../lib/signalMeta";
-import { tierFor, initials, avatarColors, arr, firstName } from "../lib/format";
+import { tierFor, initials, avatarColors, arr } from "../lib/format";
 import { computeHealth } from "../lib/health";
 import { useAppState } from "../state/AppState";
 import { useNav } from "../state/nav";
 import { SignalCard } from "../components/SignalCard";
 import { EmailDraftModal } from "../components/EmailDraftModal";
-import { DEAL_STAGES } from "../types";
 
 const GAMMA_ACTION = "Generate deck";
 
@@ -104,23 +103,6 @@ export function AccountDetail() {
           ))}
         </div>
 
-        {/* Deal cycle stepper */}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--ink-700)" }}>Deal cycle</span>
-            <span style={{ fontSize: 12, color: "var(--ink-400)" }}>· {account.cycleNote}</span>
-          </div>
-          <div style={{ display: "flex", gap: 6 }}>
-            {DEAL_STAGES.map((label, i) => (
-              <div key={label} style={{ flex: 1 }}>
-                <div style={{ height: 5, borderRadius: 999, background: i < account.stageIndex ? "var(--ink-900)" : i === account.stageIndex ? "var(--brand)" : "var(--ink-100)" }} />
-                <div style={{ fontSize: 10.5, marginTop: 6, color: i <= account.stageIndex ? "var(--ink-900)" : "var(--ink-400)", fontWeight: i === account.stageIndex ? 600 : 400, letterSpacing: "-0.01em" }}>
-                  {label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Action bar */}
@@ -236,21 +218,9 @@ export function AccountDetail() {
               <span style={{ fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 500, letterSpacing: "-0.02em", color: "var(--ink-950)" }}>Deal health</span>
               <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em", color: health.color, background: health.bg, borderRadius: 999, padding: "3px 10px" }}>{health.label}</span>
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--ink-950)", lineHeight: 1 }}>{health.score}</span>
               <span style={{ fontSize: 14, color: "var(--ink-400)" }}>/ 100</span>
-            </div>
-            <div style={{ height: 7, borderRadius: 999, background: "var(--ink-100)", overflow: "hidden", marginBottom: 16 }}>
-              <div style={{ height: "100%", width: health.pct, background: health.color, borderRadius: 999 }} />
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-              {health.factors.map((h) => (
-                <div key={h.label} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <span style={{ width: 8, height: 8, flex: "0 0 auto", borderRadius: "50%", background: h.dot }} />
-                  <span style={{ fontSize: 13, color: "var(--ink-700)", flex: 1 }}>{h.label}</span>
-                  <span style={{ fontSize: 12.5, color: "var(--ink-400)" }}>{h.note}</span>
-                </div>
-              ))}
             </div>
           </div>
 
@@ -325,12 +295,6 @@ export function AccountDetail() {
                 })}
               </div>
             )}
-            <button
-              onClick={() => say(`Email composer opened · ${champion?.name ?? "champion"}`, "mail")}
-              style={{ width: "100%", marginTop: 16, border: "none", cursor: "pointer", background: "var(--ink-950)", color: "#fff", fontFamily: "var(--font-body)", fontSize: 13, fontWeight: 600, borderRadius: "var(--radius-pill)", padding: "10px 0" }}
-            >
-              Email {champion ? firstName(champion.name) : "champion"}
-            </button>
           </div>
 
           <div style={{ background: "var(--white)", border: "1px solid var(--border-subtle)", borderRadius: "var(--radius-lg)", padding: 20, boxShadow: "var(--shadow-sm)" }}>
