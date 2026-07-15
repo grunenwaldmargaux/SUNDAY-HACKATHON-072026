@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PasswordGate } from "./components/PasswordGate";
 import { AppStateProvider } from "./state/AppState";
 import { NavContext, type View } from "./state/nav";
 import { Sidebar } from "./components/Sidebar";
@@ -60,8 +61,10 @@ function Screens() {
 
 export default function App() {
   return (
-    <AppStateProvider>
-      <Screens />
-    </AppStateProvider>
+    <PasswordGate>
+      <AppStateProvider>
+        <Screens />
+      </AppStateProvider>
+    </PasswordGate>
   );
 }
